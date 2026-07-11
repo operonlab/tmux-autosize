@@ -10,11 +10,13 @@
 # (next-3.8) `-A` (adjust toward the client) is a no-op for a background window
 # that is stuck at the wrong size; only explicit target dimensions converge it.
 #
-# Copy-mode safety (@autosize-copy-mode-safe on): if any pane in the target
-# window is in a mode (copy-mode / view-mode), resizing it right now can trip a
-# tmux upstream re-wrap spin (window_copy_resize, upstream issue #4814). So we
-# DEFER: record the wanted size in a pending marker and let scripts/flush.sh
-# converge the window the moment it leaves copy-mode.
+# Copy-mode safety (@autosize-copy-mode-safe on): resizing a window forces
+# tmux to re-wrap its scrollback; with a large history that reflow is expensive
+# enough to freeze the server (upstream tmux/tmux#4814 documents a freeze of
+# this class, triggered by drag-resize + very large history). A pane sitting in
+# copy-mode is actively holding scrollback state, so we take the conservative
+# path and DEFER: record the wanted size in a pending marker and let
+# scripts/flush.sh converge the window the moment it leaves copy-mode.
 #
 # No `set -e`: tmux treats any non-zero exit from a hook script as an error.
 

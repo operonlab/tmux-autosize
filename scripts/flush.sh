@@ -2,8 +2,9 @@
 # flush.sh — complete resizes that autosize.sh deferred because of copy-mode.
 #
 # When @autosize-copy-mode-safe is on, autosize.sh refuses to resize a window
-# that has a pane in copy-mode (it would risk the upstream re-wrap spin, issue
-# #4814) and instead drops a pending marker under the runtime dir:
+# that has a pane in copy-mode (a resize forces a scrollback re-wrap — the
+# cost class behind upstream freeze reports like tmux/tmux#4814) and instead
+# drops a pending marker under the runtime dir:
 #     <runtime>/pending/<window_id>   containing:  "<width> <height>"
 #
 # This script runs on the pane-mode-changed hook. For every marker whose window

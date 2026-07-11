@@ -36,9 +36,10 @@ sizes.
 > happened before the terminal settled). If you use **`window-size manual`**
 > (common once you script windows or run multiple clients), tmux deliberately
 > stops auto-sizing and this plugin becomes **the thing that keeps your windows
-> the right size**. The copy-mode guard exists to route around a real tmux
-> upstream re-wrap spin
-> ([tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814)). It shares the
+> the right size**. The copy-mode guard is a conservative defence against
+> resize-triggered scrollback re-wrapping — the cost class documented upstream in
+> [tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814) (a drag-resize +
+> very-large-history freeze; not copy-mode-specific, hence "conservative"). It shares the
 > `@`-option vocabulary of the rest of this plugin family but has **zero
 > dependency** on any of them.
 
@@ -112,11 +113,16 @@ Set any of these in `~/.tmux.conf` **before** the plugin line. All are optional.
 | `@autosize-on-attach` | `on` | Converge the current window when a client attaches. |
 | `@autosize-on-new-window` | `on` | Converge a freshly created window (this is what fixes background `new-window -d`). |
 | `@autosize-on-select-window` | `on` | Converge a window when you switch to it (matters under `window-size manual`). |
-| `@autosize-copy-mode-safe` | `on` | While a pane is in copy-mode, postpone its resize (and finish it when you leave) instead of risking the upstream re-wrap spin. Turn off only if you know you want immediate resizes. |
+| `@autosize-copy-mode-safe` | `on` | While a pane is in copy-mode, postpone its resize (and finish it when you leave) instead of paying the scrollback re-wrap cost at the worst moment. Turn off only if you know you want immediate resizes. |
 | `@autosize-debug` | `off` | Write a one-line-per-action log to the runtime dir (see the last FAQ entry). Handy for reporting a bug. |
 
 Setting any option to a value other than `on` disables that hook. To turn one
 off explicitly:
+
+> **Note:** options are read when the plugin loads. On an already-running
+> server, changing them takes effect after running `scripts/teardown.sh` and
+> re-sourcing your config (or restarting tmux) — a plain reload does not rewire
+> hooks that are already installed.
 
 ```tmux
 set -g @autosize-on-attach 'off'
@@ -147,9 +153,11 @@ windows tmux doesn't touch (background, inactive-under-manual, second client).
 Resizing a window that is already the right size does nothing.
 
 **Why does a resize wait while I'm scrolling or in copy-mode?**
-Because resizing a window whose pane is in copy-mode can trigger a tmux upstream
-line-rewrap loop that pins a CPU
-([tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814)). With
+Because resizing forces tmux to re-wrap the pane's scrollback, and with a very
+large history that re-wrap is expensive — upstream
+[tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814) documents a freeze of
+this class (drag-resize + huge history). Copy-mode is exactly when you are
+actively using that scrollback, so the plugin plays it safe. With
 `@autosize-copy-mode-safe on` (the default) the plugin records the wanted size
 and applies it the instant you leave copy-mode, so you still end up at the right
 size — just a moment later. Set the option to `off` to resize immediately if you
@@ -202,8 +210,8 @@ Each line records a `resize:`, a `defer:` (copy-mode), or a `flush resize:`.
 ## Credits / License
 
 The resize approach — explicit `-x/-y` convergence, per-client size, the
-copy-mode defer/flush pair that routes around
-[tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814), and the
+copy-mode defer/flush pair that sidesteps the resize-reflow cost class
+documented in [tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814), and the
 `TARGET_WIN` pin for background `new-window -d` — is the generic core extracted
 from the author's private tmux resize toolchain. Released under the
 [MIT License](LICENSE).
