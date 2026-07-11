@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: shellcheck (-S warning)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: |
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck --version
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y shellcheck
+          else
+            brew install shellcheck
+          fi
+      - name: Lint all shell files
+        run: |
+          shellcheck -S warning \
+            autosize.tmux \
+            scripts/helpers.sh \
+            scripts/autosize.sh \
+            scripts/debounce.sh \
+            scripts/flush.sh \
+            scripts/teardown.sh \
+            test/smoke.sh
+
+  smoke:
+    name: functional smoke (tmux hooks on a private socket)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tmux
+        run: |
+          if command -v tmux >/dev/null 2>&1; then
+            tmux -V
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y tmux
+          else
+            brew install tmux
+          fi
+      - name: Show tmux version
+        run: tmux -V
+      # The smoke suite is pure tmux + POSIX shell, so it runs for real on both
+      # runners. It only ever touches a private `tmux -L` socket (never the
+      # default server) and redirects TMUX_TMPDIR to a scratch dir.
+      - name: Run smoke suite
+        run: bash test/smoke.sh
