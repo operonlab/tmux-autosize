@@ -1,0 +1,8 @@
+# Editor / OS cruft
+.DS_Store
+*.swp
+*~
+
+# Nothing runtime lives in the repo — the pending-resize markers and the
+# debounce state are written under ${TMUX_TMPDIR:-/tmp}/tmux-autosize-<uid>/,
+# never here.
