@@ -31,7 +31,11 @@ WORK="$(mktemp -d 2>/dev/null || mktemp -d -t autosize)"
 export TMUX_TMPDIR="$WORK"
 RTD="${WORK}/tmux-autosize-$(id -u)"
 
-SOCK="autosizetest$$"
+# Private socket, never the default server. Overridable via SMOKE_TMUX_SOCK so a
+# `-L`-pinning PATH shim (which forces every bare `tmux` — including the ones
+# inside the scripts under test — onto one socket) can point this suite at that
+# same socket. Unset (CI / standalone) it stays a PID-unique private name.
+SOCK="${SMOKE_TMUX_SOCK:-autosizetest$$}"
 FAILS=0
 
 cleanup() {
@@ -65,6 +69,39 @@ file_exists() {
 dims() {
 	# dims <window-id>  → "WxH"
 	tmux -L "$SOCK" display-message -p -t "$1" '#{window_width}x#{window_height}' 2>/dev/null
+}
+
+pane_widths() {
+	# pane_widths <window-id>  → space-joined pane widths, e.g. "60 59 59"
+	tmux -L "$SOCK" list-panes -t "$1" -F '#{pane_width}' 2>/dev/null \
+		| tr '\n' ' ' | sed 's/ *$//'
+}
+
+wspan_le() {
+	# wspan_le <window-id> <n>  → yes if (max pane width − min) ≤ n, else no.
+	# The comparison lives in an if (not `print a<=b?..`) because a bare `>` / `<=`
+	# inside print is read as output redirection by BWK awk (macOS).
+	tmux -L "$SOCK" list-panes -t "$1" -F '#{pane_width}' 2>/dev/null | awk -v n="$2" '
+		NR == 1 { mn = mx = $1 }
+		{ if ($1 < mn) mn = $1; if ($1 > mx) mx = $1 }
+		END { d = mx - mn; if (d <= n) print "yes"; else print "no" }'
+}
+
+wspan_gt() {
+	# wspan_gt <window-id> <n>  → yes if (max pane width − min) > n, else no.
+	tmux -L "$SOCK" list-panes -t "$1" -F '#{pane_width}' 2>/dev/null | awk -v n="$2" '
+		NR == 1 { mn = mx = $1 }
+		{ if ($1 < mn) mn = $1; if ($1 > mx) mx = $1 }
+		END { d = mx - mn; if (d > n) print "yes"; else print "no" }'
+}
+
+widest_is_first() {
+	# widest_is_first <window-id>  → yes if the first pane is (tied) widest — a
+	# version-robust proxy that off kept tmux's proportions (didn't even them out).
+	tmux -L "$SOCK" list-panes -t "$1" -F '#{pane_width}' 2>/dev/null | awk '
+		NR == 1 { first = mx = $1; next }
+		{ if ($1 > mx) mx = $1 }
+		END { if (first >= mx) print "yes"; else print "no" }'
 }
 
 echo "tmux version: $(tmux -L "$SOCK" -V 2>/dev/null || tmux -V 2>/dev/null || echo 'not installed')"
@@ -171,6 +208,51 @@ resizes=$(grep -c 'resize: ' "${RTD}/autosize.log" 2>/dev/null || echo 0)
 echo "     autosize.log 'resize:' lines: ${resizes}"
 check "exactly one core resize ran (5 events coalesced)" "1" "${resizes}"
 check "the window did converge to 200x50" "200x50" "$(dims "$DBW")"
+
+# ══════════════════════ f) rebalance even-horizontal evens pane widths ══════
+echo "── f) @autosize-rebalance even-horizontal evens 3 unequal panes to ≤1 cell"
+tmux -L "$SOCK" set-option -g @autosize-rebalance even-horizontal
+tmux -L "$SOCK" new-window -d
+EHW=$(tmux -L "$SOCK" list-windows -F '#{window_id}' | tail -1)
+# A stuck 90-wide window with three deliberately UNEQUAL panes (one wide + two
+# narrow). Converging it to a 180-wide client resizes the window; the rebalance
+# then evens the panes regardless of the pre-resize skew.
+tmux -L "$SOCK" resize-window -t "$EHW" -x 90 -y 40
+tmux -L "$SOCK" split-window -h -t "$EHW"
+tmux -L "$SOCK" split-window -h -t "$EHW"
+EHP1=$(tmux -L "$SOCK" list-panes -t "$EHW" -F '#{pane_id}' | head -1)
+tmux -L "$SOCK" resize-pane -t "$EHP1" -x 60 # skew: one wide pane
+echo "     before (window $(dims "$EHW")): pane widths [$(pane_widths "$EHW")]"
+check "panes start UNEQUAL (spread > 1 cell)" "yes" "$(wspan_gt "$EHW" 1)"
+
+tmux -L "$SOCK" run-shell "CLIENT_WIDTH=180 CLIENT_HEIGHT=40 TARGET_WIN=${EHW} '${REPO_DIR}/scripts/autosize.sh'"
+sleep 0.4
+echo "     after  (window $(dims "$EHW")): pane widths [$(pane_widths "$EHW")]"
+check "window converged to 180x40" "180x40" "$(dims "$EHW")"
+check "even-horizontal: pane width spread ≤ 1 cell" "yes" "$(wspan_le "$EHW" 1)"
+
+# ══════════════════════ g) rebalance off keeps pane proportions ═════════════
+echo "── g) @autosize-rebalance off leaves pane proportions to tmux (no even-out)"
+tmux -L "$SOCK" set-option -g @autosize-rebalance off
+tmux -L "$SOCK" new-window -d
+OFW=$(tmux -L "$SOCK" list-windows -F '#{window_id}' | tail -1)
+tmux -L "$SOCK" resize-window -t "$OFW" -x 90 -y 40
+tmux -L "$SOCK" split-window -h -t "$OFW"
+tmux -L "$SOCK" split-window -h -t "$OFW"
+OFP1=$(tmux -L "$SOCK" list-panes -t "$OFW" -F '#{pane_id}' | head -1)
+tmux -L "$SOCK" resize-pane -t "$OFP1" -x 60 # same skew as (f)
+echo "     before (window $(dims "$OFW")): pane widths [$(pane_widths "$OFW")]"
+
+tmux -L "$SOCK" run-shell "CLIENT_WIDTH=180 CLIENT_HEIGHT=40 TARGET_WIN=${OFW} '${REPO_DIR}/scripts/autosize.sh'"
+sleep 0.4
+echo "     after  (window $(dims "$OFW")): pane widths [$(pane_widths "$OFW")]"
+check "window converged to 180x40" "180x40" "$(dims "$OFW")"
+# The discriminator vs (f): with rebalance off the panes are NOT flattened —
+# tmux keeps them proportional, so the spread stays wide and the originally
+# widest pane is still the widest. (Exact widths are tmux-internal, so we assert
+# the version-robust shape, not exact cells.)
+check "off: panes NOT evened (spread stays > 1 cell)" "yes" "$(wspan_gt "$OFW" 1)"
+check "off: proportions kept (widest pane is still the first)" "yes" "$(widest_is_first "$OFW")"
 
 echo ""
 if [ "$FAILS" -eq 0 ]; then
