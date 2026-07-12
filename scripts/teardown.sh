@@ -36,7 +36,8 @@ done
 
 # Clear plugin options (harmless if never set).
 for opt in @autosize-debounce-ms @autosize-on-attach @autosize-on-new-window \
-	@autosize-on-select-window @autosize-copy-mode-safe @autosize-debug; do
+	@autosize-on-select-window @autosize-copy-mode-safe @autosize-rebalance \
+	@autosize-debug; do
 	tmux set-option -gu "$opt" 2>/dev/null || true
 done
 

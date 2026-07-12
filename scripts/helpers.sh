@@ -69,6 +69,45 @@ stat_mtime() {
 	printf '%s' "$_m"
 }
 
+# autosize_rebalance <target-window>
+# Re-arrange the panes of <target> per @autosize-rebalance, AFTER a successful
+# resize-window. The option is read fresh here (never stored in a pending
+# marker), so changing it takes effect on the next convergence:
+#   off (default)   → nothing (tmux's own proportional pane scaling stands).
+#   spread          → `select-layout -E`: even the current pane's row/column
+#                     without changing the layout shape (tmux ≥ 2.7).
+#   even-horizontal
+#   even-vertical
+#   tiled           → apply the matching named tmux layout.
+# A rebalance is cosmetic and best-effort: any failure (and an unknown value) is
+# logged and swallowed — it must never turn a hook into a tmux "error".
+autosize_rebalance() {
+	_target="$1"
+	_mode=$(get_tmux_option @autosize-rebalance off)
+	case "$_mode" in
+		off)
+			return 0
+			;;
+		spread)
+			if tmux select-layout -E -t "$_target" 2>/dev/null; then
+				autosize_log "rebalance: mode=spread target=${_target}"
+			else
+				autosize_log "rebalance fail: mode=spread target=${_target}"
+			fi
+			;;
+		even-horizontal | even-vertical | tiled)
+			if tmux select-layout -t "$_target" "$_mode" 2>/dev/null; then
+				autosize_log "rebalance: mode=${_mode} target=${_target}"
+			else
+				autosize_log "rebalance fail: mode=${_mode} target=${_target}"
+			fi
+			;;
+		*)
+			autosize_log "rebalance skip: unknown mode='${_mode}' target=${_target}"
+			;;
+	esac
+}
+
 # autosize_log <message...>
 # Append a diagnostic line to the runtime log, but only when @autosize-debug is
 # on (read once by the caller into AUTOSIZE_DEBUG). No-op otherwise, so the hot

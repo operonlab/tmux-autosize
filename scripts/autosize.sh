@@ -87,5 +87,6 @@ fi
 # ── Safe: converge now ────────────────────────────────────────────────────
 # Drop any stale pending marker first (we are resizing this window for real).
 RD=$(autosize_runtime_dir) && rm -f "${RD}/pending/${TARGET}" 2>/dev/null
-tmux resize-window -t "$TARGET" -x "$CW" -y "$CH" 2>/dev/null
+tmux resize-window -t "$TARGET" -x "$CW" -y "$CH" 2>/dev/null \
+	&& autosize_rebalance "$TARGET"
 autosize_log "resize: target=${TARGET} size=${CW}x${CH}"

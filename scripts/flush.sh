@@ -73,7 +73,8 @@ for marker in "$PD"/*; do
 		continue
 	fi
 
-	tmux resize-window -t "$key" -x "$TX" -y "$TY" 2>/dev/null
+	tmux resize-window -t "$key" -x "$TX" -y "$TY" 2>/dev/null \
+		&& autosize_rebalance "$key"
 	rm -f "$marker"
 	autosize_log "flush resize: key=${key} size=${TX}x${TY}"
 done
