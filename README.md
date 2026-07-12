@@ -114,7 +114,15 @@ Set any of these in `~/.tmux.conf` **before** the plugin line. All are optional.
 | `@autosize-on-new-window` | `on` | Converge a freshly created window (this is what fixes background `new-window -d`). |
 | `@autosize-on-select-window` | `on` | Converge a window when you switch to it (matters under `window-size manual`). |
 | `@autosize-copy-mode-safe` | `on` | While a pane is in copy-mode, postpone its resize (and finish it when you leave) instead of paying the scrollback re-wrap cost at the worst moment. Turn off only if you know you want immediate resizes. |
+| `@autosize-rebalance` | `off` | After a window converges, optionally re-arrange its panes. `off` leaves them to tmux's own proportional scaling; `spread` evens them out *without* changing the layout shape (`select-layout -E`); `even-horizontal` / `even-vertical` / `tiled` apply that named tmux layout. Any other value is ignored. See the pane-proportions FAQ. |
 | `@autosize-debug` | `off` | Write a one-line-per-action log to the runtime dir (see the last FAQ entry). Handy for reporting a bug. |
+
+> **`@autosize-rebalance` version note.** `spread` uses `select-layout -E`, which
+> the official [tmux CHANGES](https://github.com/tmux/tmux/blob/master/CHANGES)
+> added under **"CHANGES FROM 2.6 TO 2.7"** (*"Add select-layout -E to spread
+> panes out evenly"*). The `even-horizontal` / `even-vertical` / `tiled` layouts
+> are older still. All are below this plugin's own **tmux 3.0** floor, so
+> `@autosize-rebalance` needs nothing newer than the plugin already requires.
 
 Setting any option to a value other than `on` disables that hook. To turn one
 off explicitly:
@@ -168,10 +176,22 @@ By design. The plugin converges a window to the size of the *client looking at
 it*; with no client attached there's no size to converge to, so it does nothing
 rather than guess. Attach a client and the size follows.
 
-**Does it change my pane layout?**
-No — it only changes the **window** size. When a window resizes, tmux itself
-adjusts the panes proportionally; the plugin does not run `select-layout` or
-otherwise re-arrange your panes.
+**Do my pane proportions change after a resize?**
+By default, **no** — the plugin only changes the **window** size, and tmux itself
+scales the panes *proportionally* to the new size (a pane that was half the width
+stays about half). It does not run `select-layout`.
+
+If you *want* the panes re-arranged on each convergence, set
+`@autosize-rebalance`:
+
+- `spread` — even the panes out *without* changing the layout shape
+  (`select-layout -E`).
+- `even-horizontal` / `even-vertical` / `tiled` — apply that named tmux layout.
+
+Unlike the on/off hook toggles, `@autosize-rebalance` is read *fresh on every
+convergence*, so a change takes effect on the **next** resize with no
+teardown/reload needed — the running-server caveat in the
+[Options](#options) note applies to the hook-install toggles, not to this one.
 
 **How do I see what it's doing?**
 Turn on the debug log:
