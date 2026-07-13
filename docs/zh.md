@@ -68,7 +68,7 @@ tmux source ~/.tmux.conf   # 重新載入設定
 
 ## Demo
 
-*Demo GIF coming soon.*
+![tmux-autosize demo](demo.gif)
 
 ## Options
 

@@ -101,7 +101,7 @@ That's it. From now on your windows converge to the right size on their own.
 
 ## Demo
 
-*Demo GIF coming soon.*
+![tmux-autosize demo](docs/demo.gif)
 
 ## Options
 
