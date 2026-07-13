@@ -1,68 +1,66 @@
-# tmux-autosize demo — recorded with vhs (https://github.com/charmbracelet/vhs)
-#   cd tmux-autosize && vhs docs/demo.tape
-#
-# Runs in a throwaway, isolated tmux server (-L vhsdemo-autosize,
-# -f /dev/null) so it never touches your real tmux. Under `window-size
-# manual` a background window (`new-window -d`) is born stuck at 80x24. The
-# recording contrasts one made before the plugin loads (stays 80x24) with
-# one made after — its after-new-window hook converges it to the client size.
-#
-# The hidden setup restores the console window to the client size after
-# switching to manual (manual mode would otherwise shrink it too); the
-# subject of the demo is the background windows.
-
+# tmux-autosize demo — under `window-size manual`, a window made in the
+# background (new-window -d) is born stuck at the 80x24 default and stays there.
+# tmux-autosize's after-new-window hook converges every new background window to
+# the real client size the instant it is born — no status line, no colours, it
+# only fixes sizes.
+# Fully self-contained: docs/demo-setup.sh stages a cockpit-style themed ISOLATED
+# tmux server (socket az-demo) and two pane helpers (nw / lw). Re-record from the
+# repo root with:  vhs docs/demo.tape
 Output "docs/demo.gif"
+Require tmux
+
 Set Shell "bash"
-Set FontSize 15
-Set Width 1200
-Set Height 660
-Set Padding 12
-Set TypingSpeed 45ms
+Set FontFamily "MesloLGS Nerd Font Mono"
+Set FontSize 20
+Set Width 1600
+Set Height 900
+Set Padding 20
+Set TypingSpeed 35ms
 
 Hide
-Type `tmux -L vhsdemo-autosize -f /dev/null new-session -d -s demo -n console 'bash --norc -i'`
-Enter
-Type `tmux -L vhsdemo-autosize attach -t demo`
-Enter
-Sleep 800ms
-Type `PS1='az> '`
-Enter
-Type `tmux -L vhsdemo-autosize set -g status-right ''`
-Enter
-Type `alias lw="tmux -L vhsdemo-autosize list-windows -F '  #I #{window_name}: #{window_width}x#{window_height}'"`
-Enter
-Type `eval "$(tmux -L vhsdemo-autosize display -p 'CW=#{client_width} CH=#{client_height}')"`
-Enter
-Type `tmux -L vhsdemo-autosize set -g window-size manual`
-Enter
-Type `tmux -L vhsdemo-autosize resize-window -t demo:console -x $CW -y $CH`
-Enter
-Type "clear"
-Enter
-Sleep 400ms
-Show
-Type "# window-size manual: a window made in the background is born stuck at 80x24"
-Enter
-Type `tmux -L vhsdemo-autosize new-window -d -n bg-before`
-Enter
-Sleep 500ms
-Type "lw"
+Type "bash docs/demo-setup.sh"
 Enter
 Sleep 3s
-Type "# load tmux-autosize, then make another background window:"
+Type "clear; tmux -L az-demo attach -t demo"
 Enter
-Hide
-Type "./autosize.tmux"
-Enter
-Sleep 500ms
-Show
-Type `tmux -L vhsdemo-autosize new-window -d -n bg-after`
+Sleep 1500ms
+Type "bash /tmp/vhs-autosize-demo/manual-prep.sh"
 Enter
 Sleep 900ms
+Show
+
+# BEFORE — window-size manual, tmux-autosize NOT loaded yet
+Sleep 1000ms
+Type "# window-size manual: a background window is born stuck at 80x24"
+Enter
+Sleep 400ms
+Type "nw bg-before"
+Enter
+Sleep 600ms
 Type "lw"
 Enter
-Sleep 3.5s
+Sleep 4s
+
+# load tmux-autosize, then make another background window
+Type "# load tmux-autosize, then make another background window:"
+Enter
+Sleep 400ms
+Type "load-autosize"
+Enter
+Sleep 900ms
+
+# AFTER — the after-new-window hook converges it on creation
+Type "nw bg-after"
+Enter
+Sleep 1000ms
+Type "lw"
+Enter
+Sleep 4500ms
+
 Hide
-Type `tmux -L vhsdemo-autosize kill-server`
+Ctrl+B
+Type "d"
+Sleep 500ms
+Type "tmux -L az-demo kill-server"
 Enter
 Sleep 500ms
