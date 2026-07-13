@@ -40,7 +40,7 @@ tmux source ~/.tmux.conf
 然後加上 tmux-autosize。把這行放在 `~/.tmux.conf` 裡、`run '~/.tmux/plugins/tpm/tpm'` 那行的**上面**：
 
 ```tmux
-set -g @plugin 'joneshong/tmux-autosize'
+set -g @plugin 'operonlab/tmux-autosize'
 ```
 
 #### 方式 B —— 不用 TPM（一行，無外掛管理器）
@@ -48,7 +48,7 @@ set -g @plugin 'joneshong/tmux-autosize'
 Clone 到任何地方，然後在 `~/.tmux.conf` 加一行：
 
 ```sh
-git clone https://github.com/joneshong/tmux-autosize ~/.tmux/plugins/tmux-autosize
+git clone https://github.com/operonlab/tmux-autosize ~/.tmux/plugins/tmux-autosize
 printf '%s\n' "run-shell '~/.tmux/plugins/tmux-autosize/autosize.tmux'" >> ~/.tmux.conf
 ```
 

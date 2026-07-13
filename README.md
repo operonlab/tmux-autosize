@@ -71,7 +71,7 @@ Then add tmux-autosize. Put this line in your `~/.tmux.conf` **above** the
 `run '~/.tmux/plugins/tpm/tpm'` line:
 
 ```tmux
-set -g @plugin 'joneshong/tmux-autosize'
+set -g @plugin 'operonlab/tmux-autosize'
 ```
 
 #### Path B — without TPM (one line, no plugin manager)
@@ -79,7 +79,7 @@ set -g @plugin 'joneshong/tmux-autosize'
 Clone it anywhere, then add one line to `~/.tmux.conf`:
 
 ```sh
-git clone https://github.com/joneshong/tmux-autosize ~/.tmux/plugins/tmux-autosize
+git clone https://github.com/operonlab/tmux-autosize ~/.tmux/plugins/tmux-autosize
 printf '%s\n' "run-shell '~/.tmux/plugins/tmux-autosize/autosize.tmux'" >> ~/.tmux.conf
 ```
 
