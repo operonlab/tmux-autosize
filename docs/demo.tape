@@ -2,18 +2,19 @@
 # background (new-window -d) is born stuck at the 80x24 default and stays there.
 # tmux-autosize's after-new-window hook converges every new background window to
 # the real client size the instant it is born — no status line, no colours, it
-# only fixes sizes.
-# Fully self-contained: docs/demo-setup.sh stages a cockpit-style themed ISOLATED
-# tmux server (socket az-demo) and two pane helpers (nw / lw). Re-record from the
-# repo root with:  vhs docs/demo.tape
+# only fixes sizes (the real effect is shown in the pane body via lw).
+# Fully self-contained: docs/demo-setup.sh stages the family two-row pill cockpit
+# + byte-exact Starship prompt on an ISOLATED tmux server (socket az-demo) and
+# three pane helpers (nw / lw / load-autosize). Re-record from the repo root
+# with:  vhs docs/demo.tape
 Output "docs/demo.gif"
 Require tmux
 
 Set Shell "bash"
 Set FontFamily "MesloLGS Nerd Font Mono"
 Set FontSize 20
-Set Width 1600
-Set Height 900
+Set Width 2392
+Set Height 940
 Set Padding 20
 Set TypingSpeed 35ms
 
