@@ -4,13 +4,9 @@
 
 **讓 tmux 視窗不再卡在 `80x24` 或某個過時尺寸。四個 hook 會把每個視窗自動收斂到「正在看它的那個 client」的實際大小。**
 
-![對比前：window-size manual 且未載入外掛時，用 new-window -d 在背景建立的視窗一出生就卡在 80x24 預設值，而 client 其實更大](screenshot-before.png)
+![tmux-autosize 對比：window-size manual 下，載入外掛前建立的背景視窗 bg-before 一出生就卡在 80x24 預設值；載入外掛後建立的 bg-after 則在建立的瞬間收斂到 client 的真實尺寸](screenshot.png)
 
-*對比前 —— 在 `window-size manual` 下，於背景建立的視窗（`new-window -d`）一出生就卡在 `80x24`。*
-
-![對比後：載入 tmux-autosize 後，after-new-window hook 會在視窗建立的瞬間把它調整到 client 的真實尺寸](screenshot-after.png)
-
-*對比後 —— tmux-autosize 在視窗一建立時就自動把它收斂到 client 的真實尺寸。*
+*在 `window-size manual` 下，`bg-before`（載入外掛前建立）一出生就卡在 `80x24`；`bg-after` 在視窗一建立時就自動收斂到 client 的真實尺寸。*
 
 ## 這是什麼？
 

@@ -6,13 +6,9 @@
 Four hooks quietly converge each window to the size of the client that's
 actually looking at it.**
 
-![Before — under window-size manual with tmux-autosize not loaded, a background window created with new-window -d is born stuck at the 80x24 default while the client is bigger](docs/screenshot-before.png)
+![tmux-autosize hero — under window-size manual, a background window made before the plugin loads (bg-before) is born stuck at the 80x24 default, while one made after the plugin loads (bg-after) converges to the real client size the instant it is created](docs/screenshot.png)
 
-*Before — under `window-size manual`, a window made in the background (`new-window -d`) is born stuck at `80x24`.*
-
-![After — with tmux-autosize loaded, the after-new-window hook resizes each new background window to the real client size the instant it is created](docs/screenshot-after.png)
-
-*After — tmux-autosize converges the same window to the client's real size on its own, the moment it is created.*
+*Under `window-size manual`, `bg-before` (made before the plugin loads) is born stuck at `80x24`; `bg-after` converges to the client's real size on its own, the moment it is created.*
 
 ## What is this?
 
