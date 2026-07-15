@@ -160,6 +160,30 @@ tail -f "${TMUX_TMPDIR:-/tmp}/tmux-autosize-$(id -u)/autosize.log"
 - **測試環境：** tmux `next-3.8`（開發版）on macOS，以及 CI 裡 `ubuntu-latest` 內建的 tmux（目前是 3.x）。headless 功能測試在兩邊都跑。
 - **沒有額外 runtime 依賴**，只需要 tmux 和 POSIX shell——用到的 `awk`、`grep`、`date`、`stat` 之類 macOS／Linux 本來就有。debounce 計時器用 identity token 而非次秒級時間戳，所以就算 `date +%N` 不可用（原生 BSD／macOS）也照樣運作。
 
+<!-- family-section -->
+---
+
+## [operonlab](https://github.com/operonlab) tmux 外掛家族
+
+一組小而專注的外掛，能組合成同一個駕駛艙。上面是原生 tmux **之前**，下面是整個家族 **之後**：
+
+![原生 tmux 對比 operonlab tmux 駕駛艙](family-before-after.gif)
+
+想用哪個就裝哪個：
+
+| 外掛 | 加了什麼 |
+|------|----------|
+| [tmux-workdesk](https://github.com/operonlab/tmux-workdesk) | 一鍵 IDE ＋ tile/main 窗格佈局 |
+| [tmux-floatpane](https://github.com/operonlab/tmux-floatpane) | 彈出式浮動暫存終端機 |
+| [tmux-context-menu](https://github.com/operonlab/tmux-context-menu) | 右鍵／prefix 窗格動作選單 |
+| **tmux-autosize　—— 你在這** | 背景視窗自動貼合用戶端尺寸 |
+| [tmux-passthrough](https://github.com/operonlab/tmux-passthrough) | 把按鍵直接穿透給內層程式 |
+| [tmux-sysmon](https://github.com/operonlab/tmux-sysmon) | 即時 CPU／MEM／DISK／NET 膠囊 |
+| [tmux-llm-usage](https://github.com/operonlab/tmux-llm-usage) | LLM 配額／花費狀態膠囊 |
+| [tmux-agent-status](https://github.com/operonlab/tmux-agent-status) | AI 窗格 busy／blocked／idle 膠囊 |
+| [tmux-pillbar](https://github.com/operonlab/tmux-pillbar) | 打造第二列自訂 pill 狀態列 |
+| [tmux-agent-resume](https://github.com/operonlab/tmux-agent-resume) | 崩潰後把每個 AI CLI 還原到原 session |
+
 ## 出處 / 授權
 
 這套 resize 手法——明確 `-x/-y` 收斂、per-client 尺寸、避開 [tmux/tmux#4814](https://github.com/tmux/tmux/issues/4814) 所記錄那類 resize 重排成本的 copy-mode 延後／補做配對、以及給背景 `new-window -d` 用的 `TARGET_WIN` 定錨——是從作者私有 tmux resize 工具鏈抽出的通用核心。以 [MIT License](../LICENSE) 釋出。
